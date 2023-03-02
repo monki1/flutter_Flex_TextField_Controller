@@ -7,11 +7,14 @@ class FlexTextFieldController {
   /// functions: [addTextToField]
   /// get: [widget], [textEditingController], [focusNode]
   /// set: [keyboardType] (default: TextInputType.text)
-  /// get [newWidget] (rebuilds widget)
+  /// get [buildWidget] (rebuilds widget)
   /// set [textStyle] (default: null) textStyle is applied to the TextField
+  /// set [inputDecoration] (default: null) inputDecoration is applied to the TextField
+  /// set [textEditingController] (default: TextEditingController())
   final BehaviorSubject<String> onChange;
   final BehaviorSubject<String> onSubmit;
-  Widget? _widget;
+  final BehaviorSubject<TextField> widgetStream;
+  TextField? _widget;
   InputDecoration? inputDecoration;
   TextEditingController textEditingController;
   TextStyle? textStyle;
@@ -27,7 +30,8 @@ class FlexTextFieldController {
       : onChange = BehaviorSubject<String>(),
         onSubmit = BehaviorSubject<String>(),
         textEditingController = TextEditingController(),
-        focusNode = FocusNode();
+        focusNode = FocusNode(),
+        widgetStream = BehaviorSubject<TextField>();
 
   void addTextToField(String s) {
     textEditingController.text = s;
@@ -40,17 +44,23 @@ class FlexTextFieldController {
   }
 
   Widget get widget {
-    if (_widget == null) {
-      return newWidget;
-    }
-    return _widget!;
+    return StreamBuilder(
+      stream: widgetStream,
+        builder: (context, snapshot) {
+      if (snapshot.hasData) {
+        return snapshot.data as Widget;
+      } else {
+        return buildWidget;
+      }
+    });
   }
 
-  Widget get newWidget {
+  TextField get buildWidget {
     _widget = flexTextFieldFactory(
         onChange, onSubmit, textEditingController, focusNode, _keyboardType,
         textStyle: textStyle, decoration: inputDecoration);
     // }
+    widgetStream.value = _widget!;
     return _widget!;
   }
 }
